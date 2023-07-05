@@ -37,7 +37,7 @@ def scrape_articles(board, start_date=None, end_date=None):
     # 建立CSV檔案並寫入標題行
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["标题", "发文时间", "作者", "内容"])
+        writer.writerow(["標題", "發文時間", "作者", "內容"])
 
         # 爬取文章
         page_url = base_url
@@ -66,7 +66,7 @@ def scrape_articles(board, start_date=None, end_date=None):
 
                 # 取得文章發文時間、作者和內容
                 post_time_element = driver.find_element(By.CSS_SELECTOR, "span.article-meta-value")
-                post_time = post_time_element.text
+                post_time = post_time_element.text.strip()
                 author = driver.find_element(By.CSS_SELECTOR, "span.article-meta-value").text
                 content = driver.find_element(By.ID, "main-content").text
 
