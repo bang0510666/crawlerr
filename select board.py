@@ -81,7 +81,7 @@ def scrape_articles(board, start_date=None, end_date=None):
                 content = re.sub(r"※ 發信站:.*", "", content)
                 content = re.sub(r"※ 文章網址:.*", "", content)
                 content = re.sub(r"※ 編輯:.*", "", content)
-
+                content = re.sub(r"--.*", "", content)
                 content = content.replace(author, "").replace(post_time, "").replace(title, "")
                 lines = content.strip().splitlines()
                 cleaned_content = " ".join(line for line in lines if line.strip())
