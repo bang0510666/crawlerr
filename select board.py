@@ -6,6 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+
 def scrape_articles(board, start_date=None, end_date=None):
     # 設定Chrome Driver的執行檔路徑
     options = Options()
@@ -71,11 +72,11 @@ def scrape_articles(board, start_date=None, end_date=None):
                 content = content_element.text.strip()
 
                 # 取得留言內容
-                comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push-content")
-                comments = [comment.text.strip() for comment in comments_elements]
+                comments_elements = driver.find_elements(By.CSS_SELECTOR, "span.f3.push-content")  # 修正留言的選擇器
+                comments = [comment.text.strip()[2:] for comment in comments_elements]  # 移除留言前面的冒號和空格
 
                 # 寫入CSV檔案
-                writer.writerow([title, post_time, author, content, "\n".join(comments)])
+                writer.writerow([title, post_time, author, content, "\n".join(comments)])  # 將留言內容串接成字串
 
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
@@ -94,6 +95,7 @@ def scrape_articles(board, start_date=None, end_date=None):
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.LINK_TEXT, "‹ 上頁")))
 
     driver.quit()
+
 
 # 指定看板名稱，起始日期和結束日期
 scrape_articles("Gossiping", start_date="2023-07-04", end_date="2023-07-05")
