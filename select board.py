@@ -72,8 +72,8 @@ def scrape_articles(board, start_date=None, end_date=None):
                 content = content_element.text.strip()
 
                 # 取得留言內容
-                comments_elements = driver.find_elements(By.CSS_SELECTOR, "span.f3.push-content")  # 修正留言的選擇器
-                comments = [comment.text.strip()[2:] for comment in comments_elements]  # 移除留言前面的冒號和空格
+                comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push span.push-content")
+                comments = [comment.text.strip() for comment in comments_elements]
 
                 # 寫入CSV檔案
                 writer.writerow([title, post_time, author, content, "\n".join(comments)])  # 將留言內容串接成字串
