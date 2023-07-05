@@ -75,6 +75,12 @@ def scrape_articles(board, start_date=None, end_date=None):
                 comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push span.push-content")
                 comments = [comment.text.strip() for comment in comments_elements]
 
+                # 檢查是否有隱藏的留言
+                hidden_comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push span.push-content.hidden")
+                for hidden_element in hidden_comments_elements:
+                    driver.execute_script("arguments[0].style.display = 'block';", hidden_element)
+                    comments.append(hidden_element.text.strip())
+
                 # 寫入CSV檔案
                 writer.writerow([title, post_time, author, content, "\n".join(comments)])  # 將留言內容串接成字串
 
