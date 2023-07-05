@@ -73,7 +73,6 @@ def scrape_articles(board, start_date=None, end_date=None):
                 content = content_element.text.strip()
 
                 # 精簡內容
-                # 精簡內容
                 content = re.sub(r"作者.*", "", content)
                 content = re.sub(r"看板.*", "", content)
                 content = re.sub(r"標題.*", "", content)
