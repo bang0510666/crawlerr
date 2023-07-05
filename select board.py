@@ -70,7 +70,8 @@ def scrape_articles(board, start_date=None, end_date=None):
                 author_element = driver.find_element(By.CSS_SELECTOR, "div.article-metaline:nth-child(1) span.article-meta-value")
                 author = author_element.text.strip()
 
-                content = driver.find_element(By.ID, "main-content").text
+                content_element = driver.find_element(By.ID, "main-content")
+                content = content_element.text.strip()
 
         # 寫入CSV檔案
                 writer.writerow([title, post_time, author, content])
