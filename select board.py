@@ -65,10 +65,11 @@ def scrape_articles(board, start_date=None, end_date=None):
                 print("連結:", link)
 
         # 取得文章發文時間、作者和內容
-                post_time_element = driver.find_element(By.CSS_SELECTOR, "span.article-meta-value")
+                post_time_element = driver.find_element(By.CSS_SELECTOR, "div.article-metaline:nth-child(4) span.article-meta-value")
                 post_time = post_time_element.text.strip()
-                author_element = driver.find_element(By.CSS_SELECTOR, "span.article-meta-value")
+                author_element = driver.find_element(By.CSS_SELECTOR, "div.article-metaline:nth-child(1) span.article-meta-value")
                 author = author_element.text.strip()
+
                 content = driver.find_element(By.ID, "main-content").text
 
         # 寫入CSV檔案
@@ -99,4 +100,4 @@ def scrape_articles(board, start_date=None, end_date=None):
     driver.quit()
 
 # 指定看板名稱，起始日期和結束日期
-scrape_articles("Gossiping", start_date="2023-07-01", end_date="2023-07-03")
+scrape_articles("Gossiping", start_date="2023-07-04", end_date="2023-07-05")
