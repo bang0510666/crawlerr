@@ -1,5 +1,6 @@
 import csv
 import datetime
+import re
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -71,6 +72,12 @@ def scrape_articles(board, start_date=None, end_date=None):
                 content_element = driver.find_element(By.ID, "main-content")
                 content = content_element.text.strip()
 
+                # 精簡內容
+                content = content.replace(author, "").replace(post_time, "").replace(title, "")
+                lines = content.strip().splitlines()
+                cleaned_content = " ".join(line for line in lines if line.strip())
+                cleaned_content = re.sub(r'//.*', '', cleaned_content)
+
                 # 取得留言內容
                 comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push span.push-content")
                 comments = [comment.text.strip() for comment in comments_elements]
@@ -82,7 +89,7 @@ def scrape_articles(board, start_date=None, end_date=None):
                     comments.append(hidden_element.text.strip())
 
                 # 寫入CSV檔案
-                writer.writerow([title, post_time, author, content, "\n".join(comments)])  # 將留言內容串接成字串
+                writer.writerow([title, post_time, author, cleaned_content, "\n".join(comments)])  # 將留言內容串接成字串
 
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
