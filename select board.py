@@ -37,7 +37,7 @@ def scrape_articles(board, start_date=None, end_date=None):
     # 建立CSV檔案並寫入標題行
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["標題", "發文時間", "作者", "內容"])
+        writer.writerow(["標題", "發文時間", "作者", "內容", "留言"])
 
         # 爬取文章
         page_url = base_url
@@ -72,9 +72,11 @@ def scrape_articles(board, start_date=None, end_date=None):
 
                 content_element = driver.find_element(By.ID, "main-content")
                 content = content_element.text.strip()
+                comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push-content")
+                comments = [comment.text.strip() for comment in comments_elements]
 
         # 寫入CSV檔案
-                writer.writerow([title, post_time, author, content])
+                writer.writerow([title, post_time, author, content, "\n".join(comments)])
 
         # 關閉文章頁面，切換回看板頁面
                 driver.close()
