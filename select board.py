@@ -37,34 +37,31 @@ def scrape_articles(board, start_date=None, end_date=None):
     # 建立CSV檔案並寫入標題行
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["標題", "發文時間", "作者", "內容", "留言"])
+        writer.writerow(["標題", "發文時間", "作者", "內容", "留言"])  # 加入留言欄位
 
         # 爬取文章
         page_url = base_url
         while True:
-
-        # 取得文章元素列表
+            # 取得文章元素列表
             article_elements = driver.find_elements(By.CLASS_NAME, "title")
 
             for article_element in article_elements:
-        # 取得文章標題
+                # 取得文章標題
                 title = article_element.text.strip()
 
-        # 點擊文章連結進入文章頁面
+                # 點擊文章連結進入文章頁面
                 title_link = article_element.find_element(By.CSS_SELECTOR, "a")
                 link = title_link.get_attribute("href")
                 driver.execute_script("window.open(arguments[0]);", link)
-
-        # 切換到新打開的文章頁面
                 driver.switch_to.window(driver.window_handles[-1])
 
-        # 等待文章頁面加載
+                # 等待文章頁面加載
                 WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, "main-content")))
 
                 print("標題:", title)
                 print("連結:", link)
 
-        # 取得文章發文時間、作者和內容
+                # 取得文章發文時間、作者和內容
                 post_time_element = driver.find_element(By.CSS_SELECTOR, "div.article-metaline:nth-child(4) span.article-meta-value")
                 post_time = post_time_element.text.strip()
                 author_element = driver.find_element(By.CSS_SELECTOR, "div.article-metaline:nth-child(1) span.article-meta-value")
@@ -72,34 +69,30 @@ def scrape_articles(board, start_date=None, end_date=None):
 
                 content_element = driver.find_element(By.ID, "main-content")
                 content = content_element.text.strip()
+
+                # 取得留言內容
                 comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push-content")
                 comments = [comment.text.strip() for comment in comments_elements]
 
-        # 寫入CSV檔案
+                # 寫入CSV檔案
                 writer.writerow([title, post_time, author, content, "\n".join(comments)])
 
-        # 關閉文章頁面，切換回看板頁面
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
 
-        # 翻頁
+            # 翻頁
             previous_page = driver.find_element(By.LINK_TEXT, "‹ 上頁")
             page_url = previous_page.get_attribute("href")
             driver.get(page_url)
 
-    # 取得當前頁面的日期
             current_date = page_url.split("/")[-1].replace("index", "").replace(".html", "")
 
-    # 判斷是否到達指定日期的文章
             if start_date and end_date:
                 if start_date > current_date or current_date > end_date:
                     break
 
-    # 等待下一頁元素加載
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.LINK_TEXT, "‹ 上頁")))
 
-
-    # 關閉瀏覽器
     driver.quit()
 
 # 指定看板名稱，起始日期和結束日期
