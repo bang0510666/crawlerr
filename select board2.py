@@ -68,9 +68,9 @@ def scrape_articles(board, start_date=None, end_date=None):
             for hidden_element in hidden_comments_elements:
                 comments.append(hidden_element.text.strip())
 
-            # 写入CSV文件
+            # 寫入CSV文件
             writer.writerow([title, post_time_str, author, cleaned_content, "\n".join(comments)])
 
-    print(f"爬取完成，结果已保存在{filename}中。")
+    print(f"爬取完成，結果已保存在{filename}中。")
 
 scrape_articles("Gossiping", start_date="2023-07-06", end_date="2023-07-07")
