@@ -48,8 +48,10 @@ def scrape_articles(board):
             for elem in content_element.select('.article-metaline, .push'):
                 elem.extract()
             content = content_element.get_text().strip()
-            # 移除掉特定字串
-            content = re.sub(r"\s*(※\s*(發信站|文章網址|編輯):\s*.*|--.*)\s*", "", content)
+            # 移除标题、看板名称以及相关HTML标签
+            content = re.sub(re.escape(title), "", content)
+            content = re.sub(r"\s*(<[^>]+>|※\s*(發信站|看板|文章網址|編輯):\s*.*|--.*)\s*", "", content)
+            content = content.replace("看板" + board, "")
 
             # 写入CSV文件
             writer.writerow([title, post_time_str, author, content])
