@@ -39,12 +39,6 @@ def scrape_articles(board, start_date=None, end_date=None):
             post_time_element = article_soup.select_one("div.article-metaline:nth-child(4) span.article-meta-value")
             post_time_str = post_time_element.text.strip() if post_time_element else "N/A"
 
-            if post_time_str == "N/A":
-                post_time = post_time_str
-            else:
-                # 转换日期字符串为datetime对象
-                post_time = datetime.datetime.strptime(post_time_str, "%a %b %d %H:%M:%S %Y")
-
             author_element = article_soup.select_one("div.article-metaline:nth-child(1) span.article-meta-value")
             author = author_element.text.strip() if author_element else "N/A"
 
@@ -60,7 +54,7 @@ def scrape_articles(board, start_date=None, end_date=None):
             content = re.sub(r"※ 文章網址:.*", "", content)
             content = re.sub(r"※ 編輯:.*", "", content)
             content = re.sub(r"--.*", "", content)
-            content = content.replace(str(author), "").replace(str(post_time), "").replace(title, "")
+            content = content.replace(author, "").replace(post_time_str, "").replace(title, "")
             lines = content.strip().splitlines()
             cleaned_content = " ".join(line for line in lines if line.strip())
             cleaned_content = re.sub(r'//.*', '', cleaned_content)
@@ -76,5 +70,7 @@ def scrape_articles(board, start_date=None, end_date=None):
 
             # 写入CSV文件
             writer.writerow([title, post_time_str, author, cleaned_content, "\n".join(comments)])
+
+    print(f"爬取完成，结果已保存在{filename}中。")
 
 scrape_articles("Gossiping", start_date="2023-07-06", end_date="2023-07-07")
