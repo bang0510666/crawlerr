@@ -5,7 +5,7 @@ import re
 from bs4 import BeautifulSoup
 
 
-def scrape_articles(board, start_date=None, end_date=None):
+def scrape_articles(board):
     session = requests.Session()
     agree_url = "https://www.ptt.cc/ask/over18"
     session.post(agree_url, data={"from": "/bbs/" + board + "/index.html", "yes": "yes"})
@@ -18,7 +18,7 @@ def scrape_articles(board, start_date=None, end_date=None):
     filename = f"{board}_articles_{current_date}.csv"
 
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
-        writer = csv.writer(csvfile)  # 使用制表符作为分隔符
+        writer = csv.writer(csvfile)
         writer.writerow(["標題", "發文時間", "作者", "內文", "留言"])
 
         for article_element in article_elements:
@@ -62,6 +62,9 @@ def scrape_articles(board, start_date=None, end_date=None):
             # 取得留言內容
             comments_elements = article_soup.select("div.push")
             comments = [comment.select_one(".push-content").text.strip() for comment in comments_elements]
+
+            # 移除留言中的發送者、時間和地點
+            comments = [re.sub(r"\(\w+\)\s", "", comment) for comment in comments]
 
             # 写入CSV文件
             writer.writerow([title, post_time_str, author, cleaned_content, "\n".join(comments)])
