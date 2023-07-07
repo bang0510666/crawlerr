@@ -18,7 +18,7 @@ def scrape_articles(board, start_date=None, end_date=None):
     filename = f"{board}_articles_{current_date}.csv"
 
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
-        writer = csv.writer(csvfile)  # 使用制表符作为分隔符
+        writer = csv.writer(csvfile)  # 使用制表符作為分隔符
         writer.writerow(["標題", "發文時間", "作者", "內文", "留言內容"])
 
         for article_element in article_elements:
@@ -60,15 +60,10 @@ def scrape_articles(board, start_date=None, end_date=None):
             cleaned_content = re.sub(r'//.*', '', cleaned_content)
 
             # 取得留言內容
-            comments_elements = article_soup.select("div.push span.push-content")
+            comments_elements = article_soup.select("div.push .push-content")
             comments = [comment.text.strip() for comment in comments_elements]
 
-            # 檢查是否有隱藏的留言
-            hidden_comments_elements = article_soup.select("div.push span.push-content.hidden")
-            for hidden_element in hidden_comments_elements:
-                comments.append(hidden_element.text.strip())
-
-            # 寫入CSV文件
+            # 写入CSV文件
             writer.writerow([title, post_time_str, author, cleaned_content, "\n".join(comments)])
 
     print(f"爬取完成，結果已保存在{filename}中。")
