@@ -42,18 +42,14 @@ def scrape_articles(board):
             author_element = article_soup.select_one("div.article-metaline:nth-child(1) span.article-meta-value")
             author = author_element.text.strip() if author_element else "N/A"
 
-            # 提取內文元素
             content_element = article_soup.find(id="main-content")
-            # 移除掉 metadata
-            for elem in content_element.select('.article-metaline'):
-                elem.extract()
-            for elem in content_element.select('.article-metaline-right'):
-                elem.extract()
-            for elem in content_element.select('.push'):
-                elem.extract()
-            content = content_element.get_text().strip()
-            # 移除掉特定字串
-            content = re.sub(r"\s*(※\s*(發信站|文章網址|編輯):\s*.*|--.*)\s*", "", content)
+            content = content_element.text.strip() if content_element else "N/A"
+            content = re.sub(r"※ 發信站:.*", "", content)
+            content = re.sub(r"※ 文章網址:.*", "", content)
+            content = re.sub(r"※ 編輯:.*", "", content)
+            content = re.sub(r'--\s*', '', content)
+            content = content.replace(author, "").replace(post_time_str, "").replace(title, "")
+            content = re.sub(r"\s+", " ", content)
 
             # 取得留言內容
             comments_elements = article_soup.select("div.push")
