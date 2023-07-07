@@ -57,7 +57,10 @@ def scrape_articles(board):
 
             # 取得留言內容
             comments_elements = article_soup.select("div.push")
-            comments = [comment.select_one(".push-content").text.strip() for comment in comments_elements]
+            comments = []
+            for comment_element in comments_elements:
+                comment_content = comment_element.select_one(".push-content").text.strip()
+                comments.append(comment_content)
 
             # 写入CSV文件
             writer.writerow([title, post_time_str, author, content, "\n".join(comments)])
