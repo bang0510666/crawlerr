@@ -44,12 +44,8 @@ def scrape_articles(board):
 
             # 提取內文元素
             content_element = article_soup.find(id="main-content")
-            # 移除掉 metadata
-            for elem in content_element.select('.article-metaline'):
-                elem.extract()
-            for elem in content_element.select('.article-metaline-right'):
-                elem.extract()
-            for elem in content_element.select('.push'):
+            # 移除掉 metadata 和留言部分
+            for elem in content_element.select('.article-metaline, .push'):
                 elem.extract()
             content = content_element.get_text().strip()
             # 移除掉特定字串
