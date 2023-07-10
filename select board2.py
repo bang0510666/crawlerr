@@ -1,85 +1,92 @@
 import csv
 import datetime
 import requests
+import bs4
 import re
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
+def scrape_article(url):
+    my_headers = {'cookie': 'over18=1;'}
+    response = requests.get(url, headers=my_headers)
+    soup = bs4.BeautifulSoup(response.text, "html.parser")
 
-def scrape_articles(board):
-    session = requests.Session()
-    agree_url = "https://www.ptt.cc/ask/over18"
-    session.post(agree_url, data={"from": "/bbs/" + board + "/index.html", "yes": "yes"})
+    header = soup.find_all('span', 'article-meta-value')
+    author = header[0].text
+    board = header[1].text
+    title = header[2].text
+    date = header[3].text
+
+    main_container = soup.find(id='main-container')
+    all_text = main_container.text
+    pre_text = all_text.split('--')[0]
+    texts = pre_text.split('\n')
+    contents = texts[2:]
+    content = '\n'.join(contents)
+
+    comments = []
+    push_elements = soup.select(".push")
+    for push_element in push_elements:
+        comment = push_element.select_one(".push-content").text.strip()
+        comment=comment.replace(": ","")
+        comments.append(comment)
+    return board, title, author, date, content, comments
+
+def scrape_articles(board, target_date=None):
+    if target_date is None:
+        target_date = datetime.date.today()
+    else:
+        target_date = datetime.datetime.strptime(target_date, "%Y-%m-%d").date()
 
     url = f"https://www.ptt.cc/bbs/{board}/index.html"
-    response = session.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    article_elements = soup.select(".r-ent")
-    current_date = datetime.date.today().strftime("%Y-%m-%d")
-    filename = f"{board}_articles_{current_date}.csv"
+    my_headers = {'cookie': 'over18=1;'}
+    count = 0
+    page = 0
+    filename = f"{board}_articles_{target_date}.csv"
 
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["標題", "發文時間", "作者", "內文", "留言"])
+        writer.writerow(["看板", "標題", "作者", "發文時間", "內容", "留言"])
 
-        for article_element in article_elements:
-            title_element = article_element.select_one(".title")
-            if not title_element:
-                continue
+        while count < 100:
+            response = requests.get(url, headers=my_headers)
+            soup = bs4.BeautifulSoup(response.text, "html.parser")
+            articles = soup.select(".r-ent")
 
-            title = title_element.text.strip()
-            link_element = title_element.select_one("a")
-            if not link_element:
-                continue
+            for article in articles:
+                if count >= 100:
+                    break
 
-            link = link_element["href"]
-            article_url = f"https://www.ptt.cc{link}"
-            article_response = session.get(article_url)
-            article_soup = BeautifulSoup(article_response.text, "html.parser")
+                title_element = article.select_one(".title a")
+                if title_element is None:
+                    continue
 
-            post_time_element = article_soup.select_one("div.article-metaline:nth-child(4) span.article-meta-value")
-            post_time_str = post_time_element.text.strip() if post_time_element else "N/A"
+                title = title_element.text.strip()
 
-            author_element = article_soup.select_one("div.article-metaline:nth-child(1) span.article-meta-value")
-            author = author_element.text.strip() if author_element else "N/A"
+                date_element = article.select_one(".meta .date")
+                if date_element:
+                    date_str = date_element.text.strip()
+                    date = datetime.datetime.strptime(date_str, "%m/%d").date()
+                    date = date.replace(year=target_date.year)
+                else:
+                    date = datetime.date.today()
 
-            # 提取內文元素
-            content_element = article_soup.find(id="main-content")
-            # 移除掉 metadata 和留言部分
-            for elem in content_element.select('.article-metaline, .push'):
-                elem.extract()
-            content = content_element.get_text().strip()
-            # 移除标题、看板名称以及相关HTML标签
-            content = re.sub(re.escape(title), "", content)
-            content = re.sub(r"\s*(<[^>]+>|※\s*(發信站|看板|文章網址|編輯):\s*.*|--.*)\s*", "", content)
-            content = content.replace("看板 " + board, "")
-            # 精簡內容
-            content = re.sub(r"作者.*", "", content)
-            content = re.sub(r"看板.*", "", content)
-            content = re.sub(r"標題.*", "", content)
-            content = re.sub(r"時間.*", "", content)
-            content = re.sub(r"https:.*", "", content)
-            content = re.sub(r"※ 發信站:.*", "", content)
-            content = re.sub(r"※ 文章網址:.*", "", content)
-            content = re.sub(r"※ 編輯:.*", "", content)
-            content = re.sub(r"--.*", "", content)
-            content = content.replace(author, "").replace(post_time_str, "").replace(title, "")
-            lines = content.strip().splitlines()
-            cleaned_content = " ".join(line for line in lines if line.strip())
-            cleaned_content = re.sub(r'//.*', '', cleaned_content)
-            # 提取留言部分
-            #將原始碼做整理
-            soup = BeautifulSoup(response.text, 'lxml')
-            comments = soup.find_all('div', 'push')
-            #取得留言內容
-            for article in comments:
-                messages = article.find('span', 'f3 push-content').getText()
-           
+                if date != target_date:
+                    continue
 
-            # 写入CSV文件
-            writer.writerow([title, post_time_str, author, content, comments])
+                article_url = "https://www.ptt.cc" + title_element["href"]
+                board, title, author, date, content, comments = scrape_article(article_url)
+                writer.writerow([board, title, author, date, content, comments])
+
+                count += 1
+
+            page += 1
+            next_link = soup.select_one(".btn-group-paging a:nth-child(2)")
+            if next_link:
+                url = "https://www.ptt.cc" + next_link["href"]
+            else:
+                break
 
     print(f"爬取完成，结果已保存在{filename}中。")
 
-scrape_articles("Gossiping")
+
+# 示例：爬取指定日期（2023-07-10）的最新100篇文章，如果没有指定日期则爬取当天的最新100篇内容
+scrape_articles("Gossiping", target_date="2023-07-10")
