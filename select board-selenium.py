@@ -39,7 +39,7 @@ def scrape_articles(board, start_date=None, end_date=None):
     # 建立CSV檔案並寫入標題行
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["標題", "發文時間", "作者", "內容", "留言"])  # 加入留言欄位
+        writer.writerow(["標題", "發文時間", "作者", "內容"])  # 加入留言欄位
 
         # 爬取文章
         page_url = base_url
@@ -87,18 +87,9 @@ def scrape_articles(board, start_date=None, end_date=None):
                 cleaned_content = " ".join(line for line in lines if line.strip())
                 cleaned_content = re.sub(r'//.*', '', cleaned_content)
 
-                # 取得留言內容
-                comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push span.push-content")
-                comments = [comment.text.strip() for comment in comments_elements]
-
-                # 檢查是否有隱藏的留言
-                hidden_comments_elements = driver.find_elements(By.CSS_SELECTOR, "div.push span.push-content.hidden")
-                for hidden_element in hidden_comments_elements:
-                    driver.execute_script("arguments[0].style.display = 'block';", hidden_element)
-                    comments.append(hidden_element.text.strip())
 
                 # 寫入CSV檔案
-                writer.writerow([title, post_time, author, cleaned_content, "\n".join(comments)])  # 將留言內容串接成字串
+                writer.writerow([title, post_time, author, cleaned_content])  # 將留言內容串接成字串
 
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
