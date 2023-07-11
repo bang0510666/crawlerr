@@ -3,6 +3,7 @@ import datetime
 import requests
 import bs4
 import re
+import time
 
 def scrape_article(url):
     my_headers = {'cookie': 'over18=1;'}
@@ -34,7 +35,7 @@ def scrape_article(url):
 
     return board, title, author, date, content, comments
 
-def scrape_articles(board, target_year=None, target_date=None):
+def scrape_articles(board, target_year=None, target_date=None, timeout=300):
     if target_year is None:
         target_year = datetime.date.today().year
     if target_date is None:
@@ -48,6 +49,9 @@ def scrape_articles(board, target_year=None, target_date=None):
     count = 0
     page = 0
     filename = f"{board}_articles_{target_year}_{target_date}.csv"
+
+    # 设置开始时间
+    start_time = time.time()
 
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
@@ -97,8 +101,13 @@ def scrape_articles(board, target_year=None, target_date=None):
             else:
                 break
 
+            # 检查是否超过设定的时间
+            current_time = time.time()
+            elapsed_time = current_time - start_time
+            if elapsed_time > timeout:
+                break
+
     print(f"爬取完成，结果已保存在{filename}中。")
 
-
-# 示例：爬取指定年份（2023）和日期（07-10）的最新100篇文章，如果没有指定日期则爬取当年当天的最新100篇内容
-scrape_articles("Gossiping", target_year=2023, target_date="2023-07-10")
+# 示例：爬取指定年份和日期的最新100篇文章，如果超过10分钟未找到数据则自动完成爬取
+scrape_articles("NBA", target_year=2023, target_date="2023-07-10", timeout=300)
