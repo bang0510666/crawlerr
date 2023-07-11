@@ -50,7 +50,7 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
     page = 0
     filename = f"{board}_articles_{target_year}_{target_date}.csv"
 
-    # 设置开始时间
+    # 設置開始時間
     start_time = time.time()
 
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
@@ -101,7 +101,7 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
             else:
                 break
 
-            # 检查是否超过设定的时间
+            # 檢查是否超過設定時間
             current_time = time.time()
             elapsed_time = current_time - start_time
             if elapsed_time > timeout:
@@ -109,5 +109,5 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
 
     print(f"爬取完成，结果已保存在{filename}中。")
 
-# 示例：爬取指定年份和日期的最新100篇文章，如果超过10分钟未找到数据则自动完成爬取
-scrape_articles("NBA", target_year=2023, target_date="2023-07-10", timeout=300)
+# 示例：爬取指定年份和日期的最新100篇文章，如果超過10分鐘未找到數據則自動完成爬取
+scrape_articles("NBA", target_year=2023, target_date="2023-07-10", timeout=200)
