@@ -103,4 +103,4 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
     print(f"爬取完成，结果已保存在{filename}中。")
 
 # 示例：爬取指定年份和日期的最新100篇文章，如果超过10分钟未找到数据则自动完成爬取
-scrape_articles("MRT", target_year=2023, target_date="2023-07-10", timeout=300)
+scrape_articles("Food", target_year=2023, target_date="2023-07-10", timeout=300)
