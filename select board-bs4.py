@@ -17,7 +17,11 @@ def scrape_article(url):
     author = header[0].text
     board = header[1].text
     title = header[2].text
-    date = header[3].text
+
+    # 获取帖子内的时间信息
+    date_str = header[3].text
+    post_datetime = datetime.datetime.strptime(date_str, "%a %b %d %H:%M:%S %Y")
+    date = post_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     main_container = soup.find(id='main-container')
     all_text = main_container.text
@@ -50,64 +54,53 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
     page = 0
     filename = f"{board}_articles_{target_year}_{target_date}.csv"
 
-    # 設置開始時間
+    # 设置开始时间
     start_time = time.time()
 
+    articles = []  # 存储爬取到的文章
+
+    while count < 100:
+        response = requests.get(url, headers=my_headers)
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        article_links = soup.select(".r-ent .title a")
+
+        for link in article_links:
+            if count >= 100:
+                break
+
+            article_url = "https://www.ptt.cc" + link["href"]
+            board, title, author, date, content, comments = scrape_article(article_url)
+            if board is None:
+                continue
+
+            post_datetime = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            if post_datetime.date() != target_date:
+                continue
+
+            articles.append([board, title, author, date, content, comments])
+            count += 1
+
+        page += 1
+        next_link = soup.select_one(".btn-group-paging a:nth-child(2)")
+        if next_link:
+            url = "https://www.ptt.cc" + next_link["href"]
+        else:
+            break
+
+        # 检查是否超过设定时间
+        current_time = time.time()
+        elapsed_time = current_time - start_time
+        if elapsed_time > timeout:
+            break
+
+    # 进行最终的筛选并将结果保存到CSV文件
+    filtered_articles = [article for article in articles if datetime.datetime.strptime(article[3], "%Y-%m-%d %H:%M:%S").date() == target_date]
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["看板", "標題", "作者", "發文時間", "內容", "留言"])
-
-        while count < 100:
-            response = requests.get(url, headers=my_headers)
-            soup = bs4.BeautifulSoup(response.text, "html.parser")
-            articles = soup.select(".r-ent")
-
-            for article in articles:
-                if count >= 100:
-                    break
-
-                title_element = article.select_one(".title a")
-                if title_element is None:
-                    continue
-
-                title = title_element.text.strip()
-
-                date_element = article.select_one(".meta .date")
-                if date_element:
-                    date_str = date_element.text.strip()
-                    date = datetime.datetime.strptime(date_str, "%m/%d").date()
-                    date = date.replace(year=target_year)
-                else:
-                    date = datetime.date.today()
-
-                if date.year != target_year:
-                    continue
-
-                if date != target_date:
-                    continue
-
-                article_url = "https://www.ptt.cc" + title_element["href"]
-                board, title, author, date, content, comments = scrape_article(article_url)
-                if board is None:
-                    continue
-
-                writer.writerow([board, title, author, date, content, comments])
-                count += 1
-
-            page += 1
-            next_link = soup.select_one(".btn-group-paging a:nth-child(2)")
-            if next_link:
-                url = "https://www.ptt.cc" + next_link["href"]
-            else:
-                break
-
-            # 檢查是否超過設定時間
-            current_time = time.time()
-            elapsed_time = current_time - start_time
-            if elapsed_time > timeout:
-                break
+        writer.writerows(filtered_articles)
 
     print(f"爬取完成，结果已保存在{filename}中。")
 
-# 示例：爬取指定年份和日期的最新100篇文章，如果超過10分鐘未找到數據則自動完成爬取
-scrape_articles("NBA", target_year=2023, target_date="2023-07-10", timeout=200)
+# 示例：爬取指定年份和日期的最新100篇文章，如果超过10分钟未找到数据则自动完成爬取
+scrape_articles("MRT", target_year=2023, target_date="2023-07-10", timeout=300)
