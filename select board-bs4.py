@@ -18,7 +18,7 @@ def scrape_article(url):
     board = header[1].text
     title = header[2].text
 
-    # 获取帖子内的时间信息
+    # 獲取貼文內的時間信息
     date_str = header[3].text
     post_datetime = datetime.datetime.strptime(date_str, "%a %b %d %H:%M:%S %Y")
     date = post_datetime.strftime("%Y-%m-%d %H:%M:%S")
@@ -54,10 +54,10 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
     page = 0
     filename = f"{board}_articles_{target_year}_{target_date}.csv"
 
-    # 设置开始时间
+    # 設置開始時間
     start_time = time.time()
 
-    articles = []  # 存储爬取到的文章
+    articles = []  # 儲存爬取到的文章
 
     while count < 100:
         response = requests.get(url, headers=my_headers)
@@ -87,13 +87,13 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
         else:
             break
 
-        # 检查是否超过设定时间
+        # 檢查是否超過設定時間
         current_time = time.time()
         elapsed_time = current_time - start_time
         if elapsed_time > timeout:
             break
 
-    # 进行最终的筛选并将结果保存到CSV文件
+    # 進行最終的篩選並將結果保存到CSV文件
     filtered_articles = [article for article in articles if datetime.datetime.strptime(article[3], "%Y-%m-%d %H:%M:%S").date() == target_date]
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
@@ -102,5 +102,5 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
 
     print(f"爬取完成，结果已保存在{filename}中。")
 
-# 示例：爬取指定年份和日期的最新100篇文章，如果超过10分钟未找到数据则自动完成爬取
+# 示例：爬取指定年份和日期的最新100篇文章，如果超過10分鐘未找到數據則自動完成爬取
 scrape_articles("Food", target_year=2023, target_date="2023-07-10", timeout=300)
