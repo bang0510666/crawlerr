@@ -2,8 +2,6 @@ import csv
 import datetime
 import requests
 import bs4
-import re
-import time
 
 def scrape_article(url):
     my_headers = {'cookie': 'over18=1;'}
@@ -18,7 +16,7 @@ def scrape_article(url):
     board = header[1].text
     title = header[2].text
 
-    # 獲取貼文內的時間信息
+    # 獲取貼文內的時間訊息
     date_str = header[3].text
     post_datetime = datetime.datetime.strptime(date_str, "%a %b %d %H:%M:%S %Y")
     date = post_datetime.strftime("%Y-%m-%d %H:%M:%S")
@@ -39,31 +37,47 @@ def scrape_article(url):
 
     return board, title, author, date, content, comments
 
-def scrape_articles(board, target_year=None, target_date=None, timeout=300):
-    if target_year is None:
-        target_year = datetime.date.today().year
+def scrape_articles(board, target_date=None):
     if target_date is None:
         target_date = datetime.date.today()
-    else:
-        target_date = datetime.datetime.strptime(target_date, "%Y-%m-%d").date()
-        target_date = target_date.replace(year=target_year)
 
     url = f"https://www.ptt.cc/bbs/{board}/index.html"
     my_headers = {'cookie': 'over18=1;'}
     count = 0
-    page = 0
-    filename = f"{board}_articles_{target_year}_{target_date}.csv"
-
-    # 設置開始時間
-    start_time = time.time()
 
     articles = []  # 儲存爬取到的文章
 
-    while count < 100:
+    while True:
         response = requests.get(url, headers=my_headers)
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         article_links = soup.select(".r-ent .title a")
 
+        # 判斷是否在時間範圍內
+        first_article_url = "https://www.ptt.cc" + article_links[0]["href"]
+        board, title, author, date, content, comments = scrape_article(first_article_url)
+        if date is None:
+            break
+
+        post_datetime = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").date()
+        if post_datetime < target_date:
+            # 爬取該頁的每篇文章
+            for link in article_links:
+                if count >= 100:
+                    break
+
+                article_url = "https://www.ptt.cc" + link["href"]
+                board, title, author, date, content, comments = scrape_article(article_url)
+                if board is None:
+                    continue
+
+                post_datetime = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").date()
+                if post_datetime >= target_date:
+                    articles.append([board, title, author, date, content, comments])
+                    count += 1
+
+            break
+
+        # 爬取該頁面的每一篇文章
         for link in article_links:
             if count >= 100:
                 break
@@ -73,34 +87,34 @@ def scrape_articles(board, target_year=None, target_date=None, timeout=300):
             if board is None:
                 continue
 
-            post_datetime = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-            if post_datetime.date() != target_date:
-                continue
-
             articles.append([board, title, author, date, content, comments])
             count += 1
 
-        page += 1
-        next_link = soup.select_one(".btn-group-paging a:nth-child(2)")
-        if next_link:
-            url = "https://www.ptt.cc" + next_link["href"]
+        prev_link = soup.select_one(".btn-group-paging a:nth-child(2)")
+        if prev_link:
+            url = "https://www.ptt.cc" + prev_link["href"]
         else:
             break
 
-        # 檢查是否超過設定時間
-        current_time = time.time()
-        elapsed_time = current_time - start_time
-        if elapsed_time > timeout:
-            break
+    # 過濾不符合指定日期範圍的文章
+    filtered_articles = []
+    for article in articles:
+        post_datetime = datetime.datetime.strptime(article[3], "%Y-%m-%d %H:%M:%S").date()
+        if post_datetime >= target_date:
+            filtered_articles.append(article)
 
-    # 進行最終的篩選並將結果保存到CSV文件
-    filtered_articles = [article for article in articles if datetime.datetime.strptime(article[3], "%Y-%m-%d %H:%M:%S").date() == target_date]
+    # 按照發文時間進行排序
+    sorted_articles = sorted(filtered_articles, key=lambda x: datetime.datetime.strptime(x[3], "%Y-%m-%d %H:%M:%S"), reverse=True)
+
+    filename = f"{board}_articles_{target_date.strftime('%Y%m%d')}.csv"
+    # 將结果保存到CSV文件
     with open(filename, "w", encoding="utf-8", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["看板", "標題", "作者", "發文時間", "內容", "留言"])
-        writer.writerows(filtered_articles)
+        writer.writerows(sorted_articles)
 
     print(f"爬取完成，结果已保存在{filename}中。")
 
-# 示例：爬取指定年份和日期的最新100篇文章，如果超過10分鐘未找到數據則自動完成爬取
-scrape_articles("Food", target_year=2023, target_date="2023-07-10", timeout=300)
+# 示例：爬取從指定日期开始往過去的最新100篇文章
+target_date = datetime.date(2023, 7, 15)
+scrape_articles("Food", target_date)
